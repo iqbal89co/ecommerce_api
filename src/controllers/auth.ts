@@ -5,8 +5,8 @@ import * as jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../secrets";
 import { BadRequestException } from "../exceptions/bad-requests";
 import { ErrorCode } from "../exceptions/root";
-import { UnprocessableEntity } from "../exceptions/validation";
 import { SignUpSchema } from "../schema/users";
+import { NotFoundException } from "../exceptions/not-found";
 
 export const signup = async (
   req: Request,
@@ -24,7 +24,8 @@ export const signup = async (
     return next(
       new BadRequestException(
         "User already exists",
-        ErrorCode.USER_ALREADY_EXISTS
+        ErrorCode.USER_ALREADY_EXISTS,
+        null
       )
     );
   }
@@ -53,12 +54,16 @@ export const login = async (
   });
   if (!user) {
     return next(
-      new BadRequestException("User does not exists", ErrorCode.USER_NOT_FOUND)
+      new NotFoundException("User does not exists", ErrorCode.USER_NOT_FOUND)
     );
   }
   if (!compareSync(password, user.password)) {
     return next(
-      new BadRequestException("Invalid password", ErrorCode.INVALID_PASSWORD)
+      new BadRequestException(
+        "Invalid password",
+        ErrorCode.INVALID_PASSWORD,
+        null
+      )
     );
   }
   const token = jwt.sign(
@@ -69,4 +74,8 @@ export const login = async (
   );
 
   res.json({ user, token });
+};
+
+export const me = async (req: Request, res: Response) => {
+  res.json(req.user);
 };
